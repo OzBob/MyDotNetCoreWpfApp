@@ -149,5 +149,14 @@ namespace MyDotNetCoreWpfAppPrism.Strings {
                 return ResourceManager.GetString("SettingsPageTitle", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Main.
+        /// </summary>
+        public static string ShellMainPage {
+            get {
+                return ResourceManager.GetString("ShellMainPage", resourceCulture);
+            }
+        }
     }
 }

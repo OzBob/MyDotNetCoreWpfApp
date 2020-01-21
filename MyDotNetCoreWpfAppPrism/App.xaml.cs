@@ -19,6 +19,7 @@ namespace MyDotNetCoreWpfAppPrism
     public partial class App : PrismApplication
     {
         private string[] _startUpArgs;
+        private IPrismDeeplinkDataService _args;
 
         public App()
         {
@@ -40,6 +41,7 @@ namespace MyDotNetCoreWpfAppPrism
         protected override void OnStartup(StartupEventArgs e)
         {
             _startUpArgs = e.Args;
+            _args = new PrismDeeplinkDataService(_startUpArgs);
             base.OnStartup(e);
         }
 
@@ -47,6 +49,8 @@ namespace MyDotNetCoreWpfAppPrism
         {
             // Core Services
             containerRegistry.Register<IFilesService, FilesService>();
+            containerRegistry.Register<IPrismDeeplinkDataService, PrismDeeplinkDataService>();
+            containerRegistry.RegisterInstance<IPrismDeeplinkDataService>(_args);
 
             // App Services
             containerRegistry.Register<IThemeSelectorService, ThemeSelectorService>();

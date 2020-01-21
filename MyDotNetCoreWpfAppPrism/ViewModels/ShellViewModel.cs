@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Windows.Input;
 using MahApps.Metro.Controls;
+using MyDotNetCoreWpfAppPrism.Contracts.Services;
 using MyDotNetCoreWpfAppPrism.Helpers;
 using MyDotNetCoreWpfAppPrism.Models;
 using MyDotNetCoreWpfAppPrism.Views;
@@ -22,6 +23,9 @@ namespace MyDotNetCoreWpfAppPrism.ViewModels
         private ICommand _loadedCommand;
         private ICommand _menuItemInvokedCommand;
         private ICommand _optionsMenuItemInvokedCommand;
+        private string _pagekey = Strings.Resources.ShellMainPage;
+        private IPrismDeeplinkDataService _deeplinkDataService;
+        private bool _firstload = true;
 
         public HamburgerMenuItem SelectedMenuItem
         {
@@ -38,7 +42,7 @@ namespace MyDotNetCoreWpfAppPrism.ViewModels
         // TODO WTS: Change the icons and titles for all HamburgerMenuItems here.
         public ObservableCollection<HamburgerMenuItem> MenuItems { get; } = new ObservableCollection<HamburgerMenuItem>()
         {
-            new HamburgerMenuGlyphItem() { Label = "Main", Glyph = "\uE8A5", Tag = typeof(MainPage).Name },
+            new HamburgerMenuGlyphItem() { Label = Strings.Resources.SettingsPageTitle, Glyph = "\uE8A5", Tag = typeof(MainPage).Name },
             new HamburgerMenuGlyphItem() { Label = "Blank", Glyph = "\uE8A5", Tag = typeof(BlankPage).Name }
         };
 
@@ -55,17 +59,35 @@ namespace MyDotNetCoreWpfAppPrism.ViewModels
 
         public ICommand OptionsMenuItemInvokedCommand => _optionsMenuItemInvokedCommand ?? (_optionsMenuItemInvokedCommand = new DelegateCommand(OnOptionsMenuItemInvoked));
 
-        public ShellViewModel(AppConfig config, IRegionManager regionManager)
+        public ShellViewModel(AppConfig config, IRegionManager regionManager, IPrismDeeplinkDataService deeplinkDataService)
         {
             _config = config;
             _regionManager = regionManager;
+            _deeplinkDataService = deeplinkDataService;
+            if (_deeplinkDataService != null && !string.IsNullOrEmpty(_deeplinkDataService.SubPage))
+            {
+                switch (_deeplinkDataService.SubPage)
+                {
+                    case Constants.PageKeys.Main:
+                        _pagekey = typeof(MainPage).Name;
+                        break;
+                    case Constants.PageKeys.Blank:
+                        _pagekey = typeof(BlankPage).Name;
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
         private void OnLoaded()
         {
             _navigationService = _regionManager.Regions[_config.MainRegion].NavigationService;
             _navigationService.Navigated += OnNavigated;
-            SelectedMenuItem = MenuItems.First();
+            var item = MenuItems
+                       .OfType<HamburgerMenuItem>()
+                       .FirstOrDefault(i => _pagekey == i.Tag.ToString());
+            SelectedMenuItem = item ?? MenuItems.First();
         }
 
         private bool CanGoBack()
@@ -84,7 +106,15 @@ namespace MyDotNetCoreWpfAppPrism.ViewModels
         {
             if (_navigationService.CanNavigate(target))
             {
-                _navigationService.RequestNavigate(target);
+                if (_firstload)
+                {
+                    _navigationService.RequestNavigate(_deeplinkDataService.Uri);
+                    _firstload = false;
+                }
+                else
+                {
+                    _navigationService.RequestNavigate(target);
+                }
             }
         }
 
